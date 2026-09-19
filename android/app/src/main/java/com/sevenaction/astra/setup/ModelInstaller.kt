@@ -17,11 +17,11 @@ class ModelInstaller(private val context: Context) {
     private val modelDir = File(context.filesDir, "models").apply { mkdirs() }
 
     val llm = Model(
-        "Astra AI (Qwen3 1.7B Q4_K_M)",
-        "qwen3-1.7b-q4_k_m.gguf",
+        "Astra AI (Qwen3 0.6B Q4_0)",
+        "qwen3-0.6b-q4_0.gguf",
         listOf(
-            "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf",
-            "https://huggingface.co/Antigma/Qwen3-1.7B-GGUF/resolve/main/qwen3-1.7b-q4_k_m.gguf"
+            "https://huggingface.co/ggml-org/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_0.gguf",
+            "https://huggingface.co/ggml-org/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_0.gguf"
         )
     )
 
@@ -34,6 +34,7 @@ class ModelInstaller(private val context: Context) {
     )
 
     private val legacyLlm = File(modelDir, "qwen3.5-2b-q4_k_m.gguf")
+    private val previousLlm = File(modelDir, "qwen3-1.7b-q4_k_m.gguf")
 
     fun file(model: Model) = File(modelDir, model.fileName)
 
@@ -43,6 +44,7 @@ class ModelInstaller(private val context: Context) {
 
     suspend fun installAll(progress: (String, Int) -> Unit) = withContext(Dispatchers.IO) {
         if (legacyLlm.exists()) legacyLlm.delete()
+        if (previousLlm.exists()) previousLlm.delete()
         downloadWithFallback(llm, progress)
         downloadWithFallback(whisper, progress)
     }
