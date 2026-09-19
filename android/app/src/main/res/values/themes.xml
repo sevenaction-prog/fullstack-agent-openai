@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.Astra" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowBackground">@color/astra_bg</item>
+        <item name="android:navigationBarColor">@color/astra_bg</item>
+        <item name="android:statusBarColor">@color/astra_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
