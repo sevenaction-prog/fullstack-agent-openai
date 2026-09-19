@@ -30,7 +30,7 @@ jobs:
 
       - name: Fetch pinned llama.cpp and whisper.cpp
         working-directory: android
-        run: ./scripts/fetch_native_deps.sh
+        run: bash ./scripts/fetch_native_deps.sh
 
       - name: Build debug APK
         working-directory: android
