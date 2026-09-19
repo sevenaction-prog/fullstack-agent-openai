@@ -12,6 +12,9 @@ fi
 git -C "$ROOT/third_party/llama.cpp" fetch --depth 1 origin "$LLAMA_COMMIT"
 git -C "$ROOT/third_party/llama.cpp" checkout --detach "$LLAMA_COMMIT"
 
+# Fold6 target: do not waste CI/device binaries on x86_64 emulator ABI.
+sed -i 's/listOf("arm64-v8a", "x86_64")/listOf("arm64-v8a")/' "$ROOT/third_party/llama.cpp/examples/llama.android/lib/build.gradle.kts"
+
 if [ ! -d "$ROOT/third_party/whisper.cpp/.git" ]; then
   git clone https://github.com/ggml-org/whisper.cpp.git "$ROOT/third_party/whisper.cpp"
 fi
