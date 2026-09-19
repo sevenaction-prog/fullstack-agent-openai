@@ -9,6 +9,8 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.sevenaction.astra.ai.LocalAiEngine
 import com.sevenaction.astra.meeting.MeetingRecorderService
@@ -54,6 +56,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         bindViews()
+        applySafeInsets()
         memory = MemoryStore(this)
         installer = ModelInstaller(this)
         ai = LocalAiEngine(this)
@@ -89,6 +92,28 @@ class MainActivity : AppCompatActivity() {
         meetingButton = findViewById(R.id.meetingButton)
         memoryButton = findViewById(R.id.memoryButton)
         coreView = findViewById(R.id.coreView)
+    }
+
+    private fun applySafeInsets() {
+        val root = findViewById<android.view.View>(R.id.root)
+        val baseLeft = root.paddingLeft
+        val baseTop = root.paddingTop
+        val baseRight = root.paddingRight
+        val baseBottom = root.paddingBottom
+
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.setPadding(
+                baseLeft + bars.left,
+                baseTop + bars.top,
+                baseRight + bars.right,
+                baseBottom + bars.bottom
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
     }
 
     private fun showFirstRunSetup() {
