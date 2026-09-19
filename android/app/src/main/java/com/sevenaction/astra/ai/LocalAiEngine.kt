@@ -90,7 +90,11 @@ class LocalAiEngine(private val context: Context) {
 
     fun respond(prompt: String): Flow<String> {
         check(ready) { "Le modèle local n'est pas prêt." }
-        return engine.sendUserPrompt(prompt, predictLength = 500)
+        val nonThinkingPrompt = buildString {
+            append(prompt.trim())
+            append("\n\n/no_think")
+        }
+        return engine.sendUserPrompt(nonThinkingPrompt, predictLength = 500)
     }
 
     fun isReady() = ready
