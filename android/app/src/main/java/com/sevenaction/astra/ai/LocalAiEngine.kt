@@ -12,7 +12,7 @@ class LocalAiEngine(private val context: Context) {
     private var ready = false
 
     val modelFile: File
-        get() = File(context.filesDir, "models/qwen3.5-2b-q4_k_m.gguf")
+        get() = File(context.filesDir, "models/qwen3-1.7b-q4_k_m.gguf")
 
     suspend fun initialize(systemPrompt: String) {
         if (ready) return
