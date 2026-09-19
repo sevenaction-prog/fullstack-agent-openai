@@ -208,12 +208,17 @@ class MainActivity : AppCompatActivity() {
             try {
                 ai.respond(prompt).collect { token ->
                     response.append(token)
-                    runOnUiThread { appendConversation(token) }
                 }
-                coreView.setState(CoreView.State.SPEAKING)
-                statusText.text = "Réponse"
-                speech.speak(response.toString())
-                delay(700)
+                val finalResponse = cleanAssistantResponse(response.toString())
+                if (finalResponse.isBlank()) {
+                    appendConversation("[Astra n'a pas produit de réponse finale. Réessaie la question.]")
+                } else {
+                    appendConversation(finalResponse)
+                    coreView.setState(CoreView.State.SPEAKING)
+                    statusText.text = "Réponse"
+                    speech.speak(finalResponse)
+                    delay(700)
+                }
             } catch (e: Exception) {
                 appendConversation("\n[Erreur locale : " + (e.message ?: "inconnue") + "]")
             } finally {
@@ -222,6 +227,22 @@ class MainActivity : AppCompatActivity() {
                 setBusy(false)
             }
         }
+    }
+
+    private fun cleanAssistantResponse(raw: String): String {
+        var cleaned = raw
+            .replace(Regex("(?is)<think>.*?</think>"), "")
+            .replace(Regex("(?i)</?think>"), "")
+            .trim()
+
+        // Safety net for a truncated reasoning block: never expose or read it.
+        val openThink = cleaned.indexOf("<think>", ignoreCase = true)
+        if (openThink >= 0) cleaned = cleaned.substring(0, openThink).trim()
+
+        return cleaned
+            .removePrefix("ASTRA:")
+            .removePrefix("Astra:")
+            .trim()
     }
 
     private fun maybeRemember(text: String) {
