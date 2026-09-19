@@ -5,48 +5,46 @@
     android:layout_height="match_parent"
     android:background="@color/astra_bg"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:paddingStart="12dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingVertical="4dp">
 
-        <LinearLayout
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ASTRA"
+            android:textColor="@color/astra_text"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/statusText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:orientation="vertical">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ASTRA"
-                android:textColor="@color/astra_text"
-                android:textSize="22sp"
-                android:textStyle="bold"/>
-            <TextView
-                android:id="@+id/statusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Initialisation locale…"
-                android:textColor="@color/astra_muted"
-                android:textSize="13sp"/>
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/memoryButton"
-            android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="Mémoire"/>
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="Initialisation locale…"
+            android:textColor="@color/astra_muted"
+            android:textSize="12sp"/>
     </LinearLayout>
 
     <com.sevenaction.astra.ui.CoreView
         android:id="@+id/coreView"
-        android:layout_width="220dp"
-        android:layout_height="220dp"
+        android:layout_width="148dp"
+        android:layout_height="148dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="6dp"
         android:contentDescription="Noyau visuel de l'assistant"/>
 
     <ScrollView
@@ -54,66 +52,91 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="12dp"
         android:background="@drawable/panel_bg"
-        android:padding="14dp">
+        android:fillViewport="true"
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/conversationText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:lineSpacingExtra="4dp"
             android:text="Astra est prête. Écris ou utilise le micro."
             android:textColor="@color/astra_text"
-            android:textSize="16sp"
-            android:lineSpacingExtra="5dp"/>
+            android:textSize="15sp"/>
     </ScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <EditText
             android:id="@+id/promptInput"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="50dp"
             android:layout_weight="1"
             android:background="@drawable/input_bg"
             android:hint="Écris ta demande…"
-            android:textColorHint="@color/astra_muted"
-            android:paddingHorizontal="16dp"
+            android:imeOptions="actionSend"
+            android:paddingHorizontal="14dp"
             android:singleLine="true"
             android:textColor="@color/astra_text"
-            android:textSize="16sp"/>
+            android:textColorHint="@color/astra_muted"
+            android:textSize="15sp"/>
 
         <Button
             android:id="@+id/sendButton"
-            android:layout_width="wrap_content"
-            android:layout_height="56dp"
-            android:layout_marginStart="8dp"
-            android:text="Envoyer"/>
+            android:layout_width="54dp"
+            android:layout_height="50dp"
+            android:layout_marginStart="6dp"
+            android:minWidth="0dp"
+            android:padding="0dp"
+            android:text="➤"
+            android:textSize="20sp"
+            android:contentDescription="Envoyer"/>
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/actionBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <Button
             android:id="@+id/voiceButton"
             android:layout_width="0dp"
-            android:layout_height="54dp"
+            android:layout_height="52dp"
             android:layout_weight="1"
-            android:text="🎙 Parler"/>
+            android:minWidth="0dp"
+            android:paddingHorizontal="4dp"
+            android:text="🎙 Parler"
+            android:textSize="13sp"/>
 
         <Button
             android:id="@+id/meetingButton"
             android:layout_width="0dp"
-            android:layout_height="54dp"
-            android:layout_marginStart="8dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="6dp"
             android:layout_weight="1"
-            android:text="● Réunion"/>
+            android:minWidth="0dp"
+            android:paddingHorizontal="4dp"
+            android:text="● Réunion"
+            android:textSize="13sp"/>
+
+        <Button
+            android:id="@+id/memoryButton"
+            android:layout_width="0dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="4dp"
+            android:text="Mémoire"
+            android:textSize="13sp"/>
     </LinearLayout>
 </LinearLayout>
