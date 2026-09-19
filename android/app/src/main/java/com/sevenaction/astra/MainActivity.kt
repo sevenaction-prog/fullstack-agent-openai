@@ -38,11 +38,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ai: LocalAiEngine
     private lateinit var speech: SpeechController
     private var busy = false
+    private var pendingMicAction: (() -> Unit)? = null
+    private var meetingDialogVisible = false
 
     private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         val mic = granted[Manifest.permission.RECORD_AUDIO]
             ?: (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
-        if (!mic) toast("Le microphone est nécessaire pour la voix et les réunions.")
+        val action = pendingMicAction
+        pendingMicAction = null
+        if (mic) action?.invoke()
+        else toast("Le microphone est nécessaire pour la voix et les réunions.")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -254,13 +259,33 @@ class MainActivity : AppCompatActivity() {
         statusText.text = "Réunion terminée"
         lifecycleScope.launch {
             delay(1800)
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle("Analyser la réunion ?")
-                .setMessage("Astra peut maintenant transcrire l'audio localement puis préparer un résumé. Cela peut prendre plusieurs minutes.")
-                .setPositiveButton("Transcrire") { _, _ -> transcribeLastMeeting() }
-                .setNegativeButton("Plus tard", null)
-                .show()
+            offerPendingMeetingAnalysis()
         }
+    }
+
+    private fun offerPendingMeetingAnalysis() {
+        if (meetingDialogVisible || busy) return
+        val prefs = getSharedPreferences(MeetingState.PREFS, MODE_PRIVATE)
+        val active = prefs.getBoolean(MeetingState.KEY_ACTIVE, false)
+        val pending = prefs.getBoolean(MeetingState.KEY_ANALYSIS_PENDING, false)
+        val path = prefs.getString(MeetingState.KEY_FOLDER, null)
+        if (active || !pending || path.isNullOrBlank()) return
+
+        meetingDialogVisible = true
+        AlertDialog.Builder(this)
+            .setTitle("Analyser la réunion ?")
+            .setMessage("Astra peut transcrire l'audio localement puis préparer un résumé, les décisions et les actions.")
+            .setPositiveButton("Transcrire") { _, _ ->
+                prefs.edit().putBoolean(MeetingState.KEY_ANALYSIS_PENDING, false).apply()
+                meetingDialogVisible = false
+                transcribeLastMeeting()
+            }
+            .setNegativeButton("Plus tard") { _, _ ->
+                meetingDialogVisible = false
+                statusText.text = "Réunion sauvegardée — analyse en attente"
+            }
+            .setOnCancelListener { meetingDialogVisible = false }
+            .show()
     }
 
     private fun transcribeLastMeeting() {
@@ -309,8 +334,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ensureMic(action: () -> Unit) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) action()
-        else permissions.launch(arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS))
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            action()
+        } else {
+            pendingMicAction = action
+            permissions.launch(arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS))
+        }
     }
 
     private fun updateMeetingUi() {
@@ -339,7 +368,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::coreView.isInitialized) updateMeetingUi()
+        if (::coreView.isInitialized) {
+            updateMeetingUi()
+            lifecycleScope.launch {
+                delay(350)
+                offerPendingMeetingAnalysis()
+            }
+        }
     }
 
     override fun onDestroy() {
