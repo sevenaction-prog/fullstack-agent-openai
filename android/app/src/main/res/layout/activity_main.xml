@@ -81,7 +81,7 @@
             android:layout_weight="1"
             android:background="@drawable/input_bg"
             android:hint="Écris ta demande…"
-            android:hintTextColor="@color/astra_muted"
+            android:textColorHint="@color/astra_muted"
             android:paddingHorizontal="16dp"
             android:singleLine="true"
             android:textColor="@color/astra_text"
