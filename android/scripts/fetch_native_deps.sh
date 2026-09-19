@@ -15,6 +15,10 @@ git -C "$ROOT/third_party/llama.cpp" checkout --detach "$LLAMA_COMMIT"
 # Fold6 target: do not waste CI/device binaries on x86_64 emulator ABI.
 sed -i 's/listOf("arm64-v8a", "x86_64")/listOf("arm64-v8a")/' "$ROOT/third_party/llama.cpp/examples/llama.android/lib/build.gradle.kts"
 
+# Mobile-safe defaults for the Fold6: lower context and batch to reduce peak RAM.
+sed -i 's/DEFAULT_CONTEXT_SIZE    = 8192/DEFAULT_CONTEXT_SIZE    = 4096/' "$ROOT/third_party/llama.cpp/examples/llama.android/lib/src/main/cpp/ai_chat.cpp"
+sed -i 's/BATCH_SIZE              = 512/BATCH_SIZE              = 256/' "$ROOT/third_party/llama.cpp/examples/llama.android/lib/src/main/cpp/ai_chat.cpp"
+
 if [ ! -d "$ROOT/third_party/whisper.cpp/.git" ]; then
   git clone https://github.com/ggml-org/whisper.cpp.git "$ROOT/third_party/whisper.cpp"
 fi
