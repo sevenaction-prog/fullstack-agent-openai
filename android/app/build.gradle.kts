@@ -12,8 +12,8 @@ android {
         applicationId = "com.sevenaction.astra"
         minSdk = 33
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.1.9"
+        versionCode = 11
+        versionName = "0.1.10"
         ndk { abiFilters += listOf("arm64-v8a") }
     }
 
