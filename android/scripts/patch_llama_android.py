@@ -47,6 +47,44 @@ s = s.replace(old_cb, new_cb)
 logging_h.write_text(s)
 
 s = ai_cpp.read_text()
+
+# Android can package native libraries directly inside the APK. In that case
+# nativeLibraryDir may not expose backend plugins as normal files, so the
+# generic directory scan can find zero backends. Keep the normal scan, then
+# explicitly load the most portable ARM64 CPU backend as a fallback.
+old_init = """    const auto *path_to_backend = env->GetStringUTFChars(nativeLibDir, 0);
+    LOGi("Loading backends from %s", path_to_backend);
+    ggml_backend_load_all_from_path(path_to_backend);
+    env->ReleaseStringUTFChars(nativeLibDir, path_to_backend);
+
+    // Initialize backends
+    llama_backend_init();
+"""
+new_init = """    const auto *path_to_backend = env->GetStringUTFChars(nativeLibDir, 0);
+    LOGi("Loading backends from %s", path_to_backend);
+    ggml_backend_load_all_from_path(path_to_backend);
+
+    if (ggml_backend_reg_count() == 0) {
+        LOGw("No backend found by directory scan; trying explicit ARM64 CPU backend");
+        const std::string cpu_backend_path =
+                std::string(path_to_backend) + "/libggml-cpu-android_armv8.0_1.so";
+        auto * reg = ggml_backend_load(cpu_backend_path.c_str());
+        if (!reg) {
+            reg = ggml_backend_load("libggml-cpu-android_armv8.0_1.so");
+        }
+        if (!reg) {
+            LOGe("Explicit CPU backend load failed");
+        }
+    }
+
+    LOGi("Registered backend count: %zu", ggml_backend_reg_count());
+    env->ReleaseStringUTFChars(nativeLibDir, path_to_backend);
+
+    // Initialize backends
+    llama_backend_init();
+"""
+if old_init in s:
+    s = s.replace(old_init, new_init)
 s = s.replace(
     "    llama_model_params model_params = llama_model_default_params();\n\n    const auto *model_path",
     "    aichat_log_clear();\n    llama_model_params model_params = llama_model_default_params();\n\n    const auto *model_path"
