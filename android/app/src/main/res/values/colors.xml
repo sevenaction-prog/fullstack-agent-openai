@@ -1,8 +1,11 @@
 <resources>
-    <color name="astra_bg">#070A0F</color>
-    <color name="astra_panel">#10161F</color>
-    <color name="astra_text">#EEF5FF</color>
-    <color name="astra_muted">#93A4B8</color>
-    <color name="astra_accent">#6EE7F9</color>
-    <color name="astra_red">#FF5F68</color>
+    <color name="astra_bg">#070604</color>
+    <color name="astra_panel">#11100D</color>
+    <color name="astra_panel_2">#17130D</color>
+    <color name="astra_text">#F5F0E8</color>
+    <color name="astra_muted">#9A9185</color>
+    <color name="astra_accent">#F6A623</color>
+    <color name="astra_accent_soft">#FFD17A</color>
+    <color name="astra_accent_deep">#9B5700</color>
+    <color name="astra_red">#FFB02E</color>
 </resources>
