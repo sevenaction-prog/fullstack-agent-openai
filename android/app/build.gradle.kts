@@ -12,8 +12,8 @@ android {
         applicationId = "com.sevenaction.astra"
         minSdk = 33
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.1.5"
+        versionCode = 7
+        versionName = "0.1.6"
         ndk { abiFilters += listOf("arm64-v8a") }
     }
 
@@ -29,6 +29,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlin { jvmToolchain(17) }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 dependencies {
