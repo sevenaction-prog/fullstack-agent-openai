@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFirstRunSetup() {
         AlertDialog.Builder(this)
             .setTitle("Installer l'intelligence locale")
-            .setMessage("Astra fonctionne sans abonnement et sans compte. Le premier lancement télécharge environ 500 Mo de modèles gratuits. Ensuite, le cœur de l'assistant fonctionne localement.")
+            .setMessage("Astra fonctionne sans abonnement et sans compte. Le premier lancement télécharge environ 1,35 Go de modèles gratuits. Ensuite, le cœur de l'assistant fonctionne localement.")
             .setCancelable(false)
             .setPositiveButton("Installer") { _, _ -> installModels() }
             .setNegativeButton("Plus tard") { _, _ -> statusText.text = "Modèles locaux non installés" }
@@ -150,12 +150,11 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 ai.initialize(
-                    "Tu es Astra, l'assistant personnel local de l'utilisateur. " +
-                    "Réponds en français par défaut, de façon naturelle, utile et concise. " +
-                    "STYLE IMPÉRATIF : réponds directement à la demande. Ne commence jamais par une salutation, " +
-                    "une présentation, ton nom, ton rôle, ni une phrase comme 'Bonjour', 'Je suis Astra', " +
-                    "'En tant qu'assistant' ou équivalent, sauf si l'utilisateur te demande explicitement qui tu es. " +
-                    "N'explique pas que tu es local et ne rappelle pas tes capacités à chaque réponse. " +
+                    "Tu es Astra, l'assistant personnel de l'utilisateur. " +
+                    "Réponds en français par défaut. Réponds directement à la question avec l'information demandée. " +
+                    "Ne reformule pas la question et ne la répète pas. Ne commence pas par une salutation ou une présentation. " +
+                    "Sois naturel, précis et concis, sauf si une réponse détaillée est utile. " +
+                    "Utilise la mémoire fournie seulement lorsqu'elle est pertinente. " +
                     "Ne prétends jamais avoir fait une action que tu n'as pas faite."
                 ) { progress ->
                     runOnUiThread {
@@ -192,15 +191,15 @@ class MainActivity : AppCompatActivity() {
         setBusy(true)
 
         val memories = memory.context()
-        val prompt = buildString {
-            if (memories.isNotBlank()) {
-                append("Mémoire personnelle disponible :\n")
+        val prompt = if (memories.isBlank()) {
+            text
+        } else {
+            buildString {
+                append("Contexte mémoire (à utiliser seulement si pertinent) :\n")
                 append(memories)
-                append("\n\n")
+                append("\n\nQuestion de l'utilisateur : ")
+                append(text)
             }
-            append("Consigne de style : réponds immédiatement au contenu, sans salutation ni présentation.\n")
-            append("Demande actuelle :\n")
-            append(text)
         }
 
         lifecycleScope.launch {
