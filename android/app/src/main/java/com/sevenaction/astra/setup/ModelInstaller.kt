@@ -17,11 +17,11 @@ class ModelInstaller(private val context: Context) {
     private val modelDir = File(context.filesDir, "models").apply { mkdirs() }
 
     val llm = Model(
-        "Astra AI (Qwen3 0.6B Q4_0)",
-        "qwen3-0.6b-q4_0.gguf",
+        "Astra AI (Qwen3 1.7B Q4_K_M)",
+        "qwen3-1.7b-q4_k_m.gguf",
         listOf(
-            "https://huggingface.co/ggml-org/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_0.gguf",
-            "https://huggingface.co/ggml-org/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_0.gguf"
+            "https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf",
+            "https://huggingface.co/Antigma/Qwen3-1.7B-GGUF/resolve/main/qwen3-1.7b-q4_k_m.gguf"
         )
     )
 
@@ -33,18 +33,13 @@ class ModelInstaller(private val context: Context) {
         )
     )
 
-    private val legacyLlm = File(modelDir, "qwen3.5-2b-q4_k_m.gguf")
-    private val previousLlm = File(modelDir, "qwen3-1.7b-q4_k_m.gguf")
-
     fun file(model: Model) = File(modelDir, model.fileName)
 
     fun allInstalled() =
-        file(llm).exists() && file(llm).length() > 100L * 1024L * 1024L &&
+        file(llm).exists() && file(llm).length() > 500L * 1024L * 1024L &&
         file(whisper).exists() && file(whisper).length() > 10L * 1024L * 1024L
 
     suspend fun installAll(progress: (String, Int) -> Unit) = withContext(Dispatchers.IO) {
-        if (legacyLlm.exists()) legacyLlm.delete()
-        if (previousLlm.exists()) previousLlm.delete()
         downloadWithFallback(llm, progress)
         downloadWithFallback(whisper, progress)
     }
@@ -77,9 +72,7 @@ class ModelInstaller(private val context: Context) {
         val connection = openFollowingRedirects(url)
         try {
             if (connection.responseCode !in 200..299) {
-                throw IllegalStateException(
-                    "Téléchargement impossible (" + connection.responseCode + ")"
-                )
+                throw IllegalStateException("Téléchargement impossible (" + connection.responseCode + ")")
             }
 
             val total = connection.contentLengthLong
@@ -93,10 +86,7 @@ class ModelInstaller(private val context: Context) {
                         output.write(buffer, 0, n)
                         done += n
                         if (total > 0) {
-                            progress(
-                                model.name,
-                                ((done * 100) / total).toInt().coerceIn(0, 99)
-                            )
+                            progress(model.name, ((done * 100) / total).toInt().coerceIn(0, 99))
                         }
                     }
                 }
@@ -123,7 +113,7 @@ class ModelInstaller(private val context: Context) {
             connection.instanceFollowRedirects = false
             connection.connectTimeout = 20000
             connection.readTimeout = 30000
-            connection.setRequestProperty("User-Agent", "Astra-Android/0.1.3")
+            connection.setRequestProperty("User-Agent", "Astra-Android/0.1.12")
             connection.setRequestProperty("Accept", "*/*")
             connection.connect()
 
