@@ -2,6 +2,7 @@ package com.sevenaction.astra
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -12,14 +13,18 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.sevenaction.astra.action.ActionEngine
 import com.sevenaction.astra.ai.LocalAiEngine
 import com.sevenaction.astra.meeting.MeetingRecorderService
 import com.sevenaction.astra.meeting.MeetingState
 import com.sevenaction.astra.meeting.MeetingTranscriber
 import com.sevenaction.astra.memory.MemoryStore
+import com.sevenaction.astra.memory.SessionMemory
 import com.sevenaction.astra.setup.ModelInstaller
 import com.sevenaction.astra.speech.SpeechController
 import com.sevenaction.astra.ui.CoreView
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -36,12 +41,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var coreView: CoreView
 
     private lateinit var memory: MemoryStore
+    private val sessionMemory = SessionMemory()
+    private lateinit var actionEngine: ActionEngine
     private lateinit var installer: ModelInstaller
     private lateinit var ai: LocalAiEngine
     private lateinit var speech: SpeechController
     private var busy = false
     private var pendingMicAction: (() -> Unit)? = null
     private var meetingDialogVisible = false
+    private var responseJob: Job? = null
 
     private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
         val mic = granted[Manifest.permission.RECORD_AUDIO]
@@ -52,12 +60,25 @@ class MainActivity : AppCompatActivity() {
         else toast("Le microphone est nécessaire pour la voix et les réunions.")
     }
 
+    private val contactsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            handleActionResult(actionEngine.resumeAfterContactsPermission())
+        } else {
+            actionEngine.cancelPending()
+            val message = "Accès aux contacts refusé. Tu peux toujours me donner directement un numéro."
+            appendConversation(message)
+            sessionMemory.addAssistant(message)
+            speech.speak(message)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         bindViews()
         applySafeInsets()
         memory = MemoryStore(this)
+        actionEngine = ActionEngine(this)
         installer = ModelInstaller(this)
         ai = LocalAiEngine(this)
 
@@ -180,29 +201,56 @@ class MainActivity : AppCompatActivity() {
 
     private fun submit(raw: String) {
         val text = raw.trim()
-        if (text.isBlank() || busy) return
-        if (!ai.isReady()) { toast("L'intelligence locale n'est pas encore prête."); return }
+        if (text.isBlank()) return
+
+        if (isStopCommand(text)) {
+            promptInput.text.clear()
+            stopCurrentAction()
+            return
+        }
+
+        if (busy) return
 
         promptInput.text.clear()
         maybeRemember(text)
         appendConversation("\n\nTOI\n" + text + "\n\nASTRA\n")
+        sessionMemory.addUser(text)
+
+        val actionResult = actionEngine.handle(text)
+        if (actionResult !is ActionEngine.Result.NotHandled) {
+            handleActionResult(actionResult)
+            return
+        }
+
+        if (!ai.isReady()) {
+            val message = "L'intelligence locale n'est pas encore prête."
+            appendConversation(message)
+            sessionMemory.addAssistant(message)
+            toast(message)
+            return
+        }
+
         coreView.setState(CoreView.State.THINKING)
         statusText.text = "Réflexion locale…"
         setBusy(true)
 
-        val memories = memory.context()
-        val prompt = if (memories.isBlank()) {
-            text
-        } else {
-            buildString {
-                append("Contexte mémoire (à utiliser seulement si pertinent) :\n")
-                append(memories)
-                append("\n\nQuestion de l'utilisateur : ")
-                append(text)
+        val persistentMemories = memory.context()
+        val recentConversation = sessionMemory.context()
+        val prompt = buildString {
+            if (persistentMemories.isNotBlank()) {
+                append("Mémoire personnelle (utiliser seulement si pertinent) :\n")
+                append(persistentMemories)
+                append("\n\n")
             }
+            if (recentConversation.isNotBlank()) {
+                append("Conversation récente :\n")
+                append(recentConversation)
+                append("\n\n")
+            }
+            append("Réponds au dernier message de l'utilisateur.")
         }
 
-        lifecycleScope.launch {
+        responseJob = lifecycleScope.launch {
             val response = StringBuilder()
             try {
                 ai.respond(prompt).collect { token ->
@@ -210,22 +258,88 @@ class MainActivity : AppCompatActivity() {
                 }
                 val finalResponse = cleanAssistantResponse(response.toString())
                 if (finalResponse.isBlank()) {
-                    appendConversation("[Astra n'a pas produit de réponse finale. Réessaie la question.]")
+                    val message = "[Astra n'a pas produit de réponse finale. Réessaie la question.]"
+                    appendConversation(message)
                 } else {
                     appendConversation(finalResponse)
+                    sessionMemory.addAssistant(finalResponse)
                     coreView.setState(CoreView.State.SPEAKING)
                     statusText.text = "Réponse"
                     speech.speak(finalResponse)
                     delay(700)
                 }
+            } catch (_: CancellationException) {
+                // Stop/Annuler coupe proprement la réponse.
             } catch (e: Exception) {
                 appendConversation("\n[Erreur locale : " + (e.message ?: "inconnue") + "]")
             } finally {
+                responseJob = null
                 coreView.setState(CoreView.State.IDLE)
                 statusText.text = "Prête"
                 setBusy(false)
             }
         }
+    }
+
+    private fun handleActionResult(result: ActionEngine.Result) {
+        when (result) {
+            ActionEngine.Result.NotHandled -> Unit
+
+            is ActionEngine.Result.Reply -> {
+                appendConversation(result.message)
+                sessionMemory.addAssistant(result.message)
+                speech.speak(result.message)
+                statusText.text = "Prête"
+            }
+
+            is ActionEngine.Result.NeedMore -> {
+                appendConversation(result.message)
+                sessionMemory.addAssistant(result.message)
+                speech.speak(result.message)
+                statusText.text = "Information nécessaire"
+            }
+
+            is ActionEngine.Result.RequestContactsPermission -> {
+                appendConversation(result.message)
+                sessionMemory.addAssistant(result.message)
+                speech.speak(result.message)
+                contactsPermission.launch(Manifest.permission.READ_CONTACTS)
+            }
+
+            is ActionEngine.Result.Launch -> {
+                appendConversation(result.confirmation)
+                sessionMemory.addAssistant(result.confirmation)
+                statusText.text = "Action prête"
+                try {
+                    startActivity(result.intent)
+                } catch (_: ActivityNotFoundException) {
+                    val message = "Aucune application compatible n'est disponible pour cette action."
+                    appendConversation("\n" + message)
+                    speech.speak(message)
+                }
+            }
+        }
+    }
+
+    private fun isStopCommand(text: String): Boolean {
+        val normalized = text.trim().lowercase()
+        return normalized in setOf(
+            "stop", "arrête", "arrete", "annule", "annuler", "tais-toi", "tais toi",
+            "stoppe", "cancel", "be quiet"
+        )
+    }
+
+    private fun stopCurrentAction() {
+        responseJob?.cancel()
+        responseJob = null
+        speech.stop()
+        actionEngine.cancelPending()
+        setBusy(false)
+        coreView.setState(CoreView.State.IDLE)
+        statusText.text = "Prête"
+        val message = "D'accord, j'arrête."
+        appendConversation("\n\nASTRA\n" + message)
+        sessionMemory.addAssistant(message)
     }
 
     private fun cleanAssistantResponse(raw: String): String {
