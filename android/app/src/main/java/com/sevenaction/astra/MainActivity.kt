@@ -89,7 +89,7 @@ class MainActivity : AppCompatActivity() {
     private fun showFirstRunSetup() {
         AlertDialog.Builder(this)
             .setTitle("Installer l'intelligence locale")
-            .setMessage("Astra fonctionne sans abonnement et sans compte. Le premier lancement télécharge environ 1,35 Go de modèles gratuits. Ensuite, le cœur de l'assistant fonctionne localement.")
+            .setMessage("Astra fonctionne sans abonnement et sans compte. Le premier lancement télécharge environ 500 Mo de modèles gratuits. Ensuite, le cœur de l'assistant fonctionne localement.")
             .setCancelable(false)
             .setPositiveButton("Installer") { _, _ -> installModels() }
             .setNegativeButton("Plus tard") { _, _ -> statusText.text = "Modèles locaux non installés" }
@@ -123,7 +123,12 @@ class MainActivity : AppCompatActivity() {
                     "Tu es Astra, un assistant personnel local, chaleureux, concis et fiable. " +
                     "Tu réponds en français par défaut. Tu aides à organiser, réfléchir, résumer et te souvenir. " +
                     "Ne prétends jamais avoir fait une action que tu n'as pas faite."
-                )
+                ) { progress ->
+                    runOnUiThread {
+                        statusText.text = progress.lineSequence().firstOrNull() ?: progress
+                        conversationText.text = progress
+                    }
+                }
                 statusText.text = "Prête — 100% local"
                 conversationText.text = "Astra est prête. Écris ou utilise le micro."
             } catch (e: Exception) {
