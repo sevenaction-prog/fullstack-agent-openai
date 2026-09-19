@@ -29,7 +29,16 @@ class LocalAiEngine(private val context: Context) {
             throw initialState.exception
         }
 
-        engine.loadModel(modelFile.absolutePath)
+        try {
+            engine.loadModel(modelFile.absolutePath)
+        } catch (e: Exception) {
+            val nativeLog = engine.lastNativeLog().takeLast(8000)
+            throw RuntimeException(
+                "Échec natif du chargement du modèle.\n\n" +
+                    (if (nativeLog.isBlank()) "Aucun journal natif disponible." else nativeLog),
+                e
+            )
+        }
         engine.setSystemPrompt(systemPrompt)
         ready = true
     }
