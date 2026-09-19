@@ -1,0 +1,8 @@
+<resources>
+    <color name="astra_bg">#070A0F</color>
+    <color name="astra_panel">#10161F</color>
+    <color name="astra_text">#EEF5FF</color>
+    <color name="astra_muted">#93A4B8</color>
+    <color name="astra_accent">#6EE7F9</color>
+    <color name="astra_red">#FF5F68</color>
+</resources>
