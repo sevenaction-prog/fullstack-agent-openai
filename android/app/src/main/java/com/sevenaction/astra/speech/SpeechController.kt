@@ -46,6 +46,12 @@ class SpeechController(
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "astra-response")
     }
 
+    fun stop() {
+        recognizer?.cancel()
+        tts.stop()
+        onListening(false)
+    }
+
     fun shutdown() {
         recognizer?.destroy()
         tts.shutdown()
