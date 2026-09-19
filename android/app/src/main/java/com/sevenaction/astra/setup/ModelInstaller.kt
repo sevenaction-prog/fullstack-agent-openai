@@ -13,9 +13,9 @@ class ModelInstaller(private val context: Context) {
     private val modelDir = File(context.filesDir, "models").apply { mkdirs() }
 
     val llm = Model(
-        "Astra AI (Qwen3.5 2B Q4_K_M)",
-        "qwen3.5-2b-q4_k_m.gguf",
-        "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf?download=true"
+        "Astra AI (Qwen3 1.7B Q4_K_M)",
+        "qwen3-1.7b-q4_k_m.gguf",
+        "https://huggingface.co/tensorblock/Qwen_Qwen3-1.7B-GGUF/resolve/main/Qwen3-1.7B-Q4_K_M.gguf?download=true"
     )
     val whisper = Model(
         "Whisper Base Q5_1",
@@ -23,10 +23,14 @@ class ModelInstaller(private val context: Context) {
         "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base-q5_1.bin?download=true"
     )
 
+    private val legacyLlm = File(modelDir, "qwen3.5-2b-q4_k_m.gguf")
+
     fun file(model: Model) = File(modelDir, model.fileName)
-    fun allInstalled() = file(llm).exists() && file(whisper).exists()
+    fun allInstalled() = file(llm).exists() && file(llm).length() > 100L * 1024L * 1024L &&
+        file(whisper).exists() && file(whisper).length() > 10L * 1024L * 1024L
 
     suspend fun installAll(progress: (String, Int) -> Unit) = withContext(Dispatchers.IO) {
+        if (legacyLlm.exists()) legacyLlm.delete()
         download(llm, progress)
         download(whisper, progress)
     }
@@ -38,11 +42,13 @@ class ModelInstaller(private val context: Context) {
             return
         }
         val temp = File(target.absolutePath + ".part")
+        if (temp.exists()) temp.delete()
+
         val connection = URL(model.url).openConnection() as HttpURLConnection
         connection.instanceFollowRedirects = true
         connection.connectTimeout = 20000
         connection.readTimeout = 30000
-        connection.setRequestProperty("User-Agent", "Astra-Android/0.1")
+        connection.setRequestProperty("User-Agent", "Astra-Android/0.1.2")
         connection.connect()
         if (connection.responseCode !in 200..299) {
             throw IllegalStateException("Téléchargement impossible (" + connection.responseCode + ")")
