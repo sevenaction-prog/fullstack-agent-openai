@@ -10,4 +10,5 @@ object MeetingState {
     const val KEY_ACTIVE = "active"
     const val KEY_STARTED_AT = "started_at"
     const val KEY_FOLDER = "folder"
+    const val KEY_ANALYSIS_PENDING = "analysis_pending"
 }
