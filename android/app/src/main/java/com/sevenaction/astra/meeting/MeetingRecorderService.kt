@@ -117,7 +117,9 @@ class MeetingRecorderService : Service() {
         recorder?.release()
         recorder = null
         getSharedPreferences(MeetingState.PREFS, MODE_PRIVATE).edit()
-            .putBoolean(MeetingState.KEY_ACTIVE, false).apply()
+            .putBoolean(MeetingState.KEY_ACTIVE, false)
+            .putBoolean(MeetingState.KEY_ANALYSIS_PENDING, true)
+            .apply()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
