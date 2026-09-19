@@ -5,5 +5,9 @@
         <item name="android:navigationBarColor">@color/astra_bg</item>
         <item name="android:statusBarColor">@color/astra_bg</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="colorPrimary">@color/astra_accent</item>
+        <item name="colorPrimaryVariant">@color/astra_accent_deep</item>
+        <item name="colorSecondary">@color/astra_accent_soft</item>
+        <item name="android:colorAccent">@color/astra_accent</item>
     </style>
 </resources>
