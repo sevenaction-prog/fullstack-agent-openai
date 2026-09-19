@@ -18,7 +18,7 @@ class LocalAiEngine(private val context: Context) {
     private var ready = false
 
     val modelFile: File
-        get() = File(context.filesDir, "models/qwen3-0.6b-q4_0.gguf")
+        get() = File(context.filesDir, "models/qwen3-1.7b-q4_k_m.gguf")
 
     suspend fun initialize(
         systemPrompt: String,
@@ -38,7 +38,7 @@ class LocalAiEngine(private val context: Context) {
         if (initialState is InferenceEngine.State.Error) throw initialState.exception
 
         val started = SystemClock.elapsedRealtime()
-        onProgress("Ouverture du modèle local (429 Mo)…")
+        onProgress("Ouverture du modèle local (1,28 Go)…")
 
         try {
             coroutineScope {
@@ -94,7 +94,7 @@ class LocalAiEngine(private val context: Context) {
             append(prompt.trim())
             append("\n\n/no_think")
         }
-        return engine.sendUserPrompt(nonThinkingPrompt, predictLength = 500)
+        return engine.sendUserPrompt(nonThinkingPrompt, predictLength = 700)
     }
 
     fun isReady() = ready
