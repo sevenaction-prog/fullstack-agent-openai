@@ -48,10 +48,9 @@ logging_h.write_text(s)
 
 s = ai_cpp.read_text()
 
-# Android can package native libraries directly inside the APK. In that case
-# nativeLibraryDir may not expose backend plugins as normal files, so the
-# generic directory scan can find zero backends. Keep the normal scan, then
-# explicitly load the most portable ARM64 CPU backend as a fallback.
+# On the Fold6, scanning all Android CPU variants can block during engine startup.
+# Load only the baseline ARM64 backend directly. It is included in the APK and
+# is the most portable variant for arm64-v8a.
 old_init = """    const auto *path_to_backend = env->GetStringUTFChars(nativeLibDir, 0);
     LOGi("Loading backends from %s", path_to_backend);
     ggml_backend_load_all_from_path(path_to_backend);
@@ -61,20 +60,14 @@ old_init = """    const auto *path_to_backend = env->GetStringUTFChars(nativeLib
     llama_backend_init();
 """
 new_init = """    const auto *path_to_backend = env->GetStringUTFChars(nativeLibDir, 0);
-    LOGi("Loading backends from %s", path_to_backend);
-    ggml_backend_load_all_from_path(path_to_backend);
+    const std::string cpu_backend_path =
+            std::string(path_to_backend) + "/libggml-cpu-android_armv8.0_1.so";
+    LOGi("Loading portable ARM64 CPU backend: %s", cpu_backend_path.c_str());
 
-    if (ggml_backend_reg_count() == 0) {
-        LOGw("No backend found by directory scan; trying explicit ARM64 CPU backend");
-        const std::string cpu_backend_path =
-                std::string(path_to_backend) + "/libggml-cpu-android_armv8.0_1.so";
-        auto * reg = ggml_backend_load(cpu_backend_path.c_str());
-        if (!reg) {
-            reg = ggml_backend_load("libggml-cpu-android_armv8.0_1.so");
-        }
-        if (!reg) {
-            LOGe("Explicit CPU backend load failed");
-        }
+    auto * reg = ggml_backend_load(cpu_backend_path.c_str());
+    if (!reg) {
+        LOGw("Absolute backend path failed; trying loader search path");
+        reg = ggml_backend_load("libggml-cpu-android_armv8.0_1.so");
     }
 
     LOGi("Registered backend count: %zu", ggml_backend_reg_count());
