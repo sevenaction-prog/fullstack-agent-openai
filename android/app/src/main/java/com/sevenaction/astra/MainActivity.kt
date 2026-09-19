@@ -150,8 +150,12 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 ai.initialize(
-                    "Tu es Astra, un assistant personnel local, chaleureux, concis et fiable. " +
-                    "Tu réponds en français par défaut. Tu aides à organiser, réfléchir, résumer et te souvenir. " +
+                    "Tu es Astra, l'assistant personnel local de l'utilisateur. " +
+                    "Réponds en français par défaut, de façon naturelle, utile et concise. " +
+                    "STYLE IMPÉRATIF : réponds directement à la demande. Ne commence jamais par une salutation, " +
+                    "une présentation, ton nom, ton rôle, ni une phrase comme 'Bonjour', 'Je suis Astra', " +
+                    "'En tant qu'assistant' ou équivalent, sauf si l'utilisateur te demande explicitement qui tu es. " +
+                    "N'explique pas que tu es local et ne rappelle pas tes capacités à chaque réponse. " +
                     "Ne prétends jamais avoir fait une action que tu n'as pas faite."
                 ) { progress ->
                     runOnUiThread {
@@ -194,6 +198,7 @@ class MainActivity : AppCompatActivity() {
                 append(memories)
                 append("\n\n")
             }
+            append("Consigne de style : réponds immédiatement au contenu, sans salutation ni présentation.\n")
             append("Demande actuelle :\n")
             append(text)
         }
