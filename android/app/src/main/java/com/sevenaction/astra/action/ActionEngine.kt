@@ -121,7 +121,7 @@ class ActionEngine(private val context: Context) {
 
     private fun parseOpenApp(text: String): String? {
         val regex = Regex(
-            """^(?:ouvre|lance|démarre|demarre|open|launch|start)\s+(?:l['’]|le\s+|la\s+|l['’]application\s+|l['’]app\s+|app\s+)?(.+)$""",
+            """^(?:ouvre|lance|démarre|demarre|open|launch|start)\s+(?:l['’]application\s+|l['’]app\s+|app\s+|l['’]|le\s+|la\s+)?(.+)$""",
             RegexOption.IGNORE_CASE
         )
         return regex.find(text)?.groupValues?.getOrNull(1)?.trim()?.takeIf { it.isNotBlank() }
