@@ -128,7 +128,11 @@ class MainActivity : AppCompatActivity() {
                 conversationText.text = "Astra est prête. Écris ou utilise le micro."
             } catch (e: Exception) {
                 statusText.text = "IA locale indisponible"
-                toast(e.message ?: "Impossible de charger le modèle")
+                val details = e::class.java.simpleName + ": " + (e.message ?: "erreur inconnue")
+                conversationText.text = "Diagnostic IA locale\n\n" + details +
+                    "\n\nModèle: " + ai.modelFile.name +
+                    "\nTaille: " + (ai.modelFile.length() / (1024L * 1024L)) + " Mo"
+                toast(details)
             } finally {
                 coreView.setState(CoreView.State.IDLE)
                 setBusy(false)
